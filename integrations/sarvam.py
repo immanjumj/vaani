@@ -6,7 +6,22 @@ import wave
 import httpx
 
 _SARVAM_BASE = "https://api.sarvam.ai"
-_MAX_CHARS = 1500  # Bulbul safe limit per chunk
+_MAX_CHARS = 490  # Bulbul limit: 500 chars per input string
+
+_SPEAKERS: dict[str, str] = {
+    "en-IN": "simran_en_narration",
+    "hi-IN": "ritu_hi_conversation",
+    "kn-IN": "chaitra_kn_narration",
+    "ta-IN": "vijay_ta_narration",
+    "te-IN": "kavitha_te_narration",
+    "bn-IN": "roopa_bn_conversational",
+    "mr-IN": "ritu_mr_narration",
+    "gu-IN": "pooja_gu_conversational",
+    "pa-IN": "harpreet_pa_narration",
+}
+
+def _speaker_for(language_code: str) -> str:
+    return _SPEAKERS.get(language_code, "anushka")
 
 
 def _auth_headers() -> dict:
@@ -70,9 +85,8 @@ async def text_to_speech(text: str, language_code: str = "en-IN") -> bytes:
             json={
                 "inputs": chunks,
                 "target_language_code": language_code,
-                "speaker": "meera",
-                "model": "bulbul:v4",
-                "enable_preprocessing": True,
+                "speaker": _speaker_for(language_code),
+                "model": "bulbul:v4-flash",
             },
         )
         resp.raise_for_status()
