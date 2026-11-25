@@ -554,6 +554,10 @@ footer {
   font-size: 36px; line-height: 1; cursor: pointer; padding: 4px 8px;
   transition: color .15s;
 }
+@media (max-width: 600px) {
+  .video-modal { padding: 12px; align-items: flex-start; padding-top: 56px; }
+  .video-modal-close { top: -40px; font-size: 28px; }
+}
 .video-modal-close:hover { color: white; }
 .video-modal video {
   width: 100%; border-radius: 12px;
@@ -1086,7 +1090,7 @@ footer {
 <div id="video-modal" class="video-modal" onclick="if(event.target===this)closeVideoModal()">
   <div class="video-modal-inner">
     <button class="video-modal-close" onclick="closeVideoModal()" aria-label="Close">&times;</button>
-    <video id="demo-video" controls preload="metadata">
+    <video id="demo-video" controls preload="metadata" playsinline webkit-playsinline x5-playsinline>
       <source src="/demo/video" type="video/mp4">
     </video>
   </div>
@@ -1095,8 +1099,10 @@ footer {
 <script>
 function openVideoModal() {
   document.getElementById('video-modal').classList.add('active');
-  document.getElementById('demo-video').play();
   document.body.style.overflow = 'hidden';
+  const v = document.getElementById('demo-video');
+  const p = v.play();
+  if (p !== undefined) p.catch(() => {});
 }
 function closeVideoModal() {
   document.getElementById('video-modal').classList.remove('active');
