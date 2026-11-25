@@ -154,7 +154,9 @@ async def main():
     print(f"  Server ready at {BASE}\n")
 
     try:
-        # 2. Generate voiceover in background while we set up recording
+        # 2. Pre-start simulation + voiceover BEFORE camera rolls so there's no visible wait
+        print("Pre-starting simulation (Sarvam preparing audio off-camera)...")
+        sim_task = asyncio.create_task(start_simulation())
         print("Generating voiceover (Sarvam Bulbul TTS)...")
         tts_task = asyncio.create_task(generate_tts(NARRATION))
 
@@ -178,18 +180,14 @@ async def main():
             await page.goto(BASE, wait_until="networkidle")
             await page.wait_for_timeout(2500)
 
-            # Kick off simulation while we scroll the landing page
-            print("  Triggering simulation (Sarvam preparing audio)...")
-            sim_task = asyncio.create_task(start_simulation())
-
-            # Scroll through sections slowly
+            # Scroll through sections — simulation is already running off-camera
             for sel in ["#how", "#tools", "#languages"]:
                 await page.evaluate(
                     f"document.querySelector('{sel}')?.scrollIntoView({{behavior:'smooth'}})"
                 )
                 await page.wait_for_timeout(2200)
 
-            # Wait for simulation to finish preparing
+            # Simulation should be ready by now (or nearly so)
             print("  Waiting for briefing to be prepared...", end="", flush=True)
             sim_id = await sim_task
             print(f" ready ({sim_id[:8]}...)")
