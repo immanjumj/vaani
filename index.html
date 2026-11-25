@@ -300,6 +300,72 @@ section { padding: 96px 48px; }
   color: var(--gray-dark); background: var(--bg-warm);
 }
 
+/* ── BOT SECTION ── */
+.bot-section { background: var(--bg-tinted); }
+.bot-ways {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 28px; margin-top: 60px;
+}
+.bot-way {
+  background: white; border: 1.5px solid var(--border);
+  border-radius: var(--radius-xl); padding: 36px 32px;
+}
+.bot-way-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--saffron); margin-bottom: 8px;
+}
+.bot-way h3 {
+  font-size: 20px; font-weight: 700; color: var(--black);
+  letter-spacing: -0.4px; margin-bottom: 8px;
+}
+.bot-way > p {
+  font-size: 14px; color: var(--gray); line-height: 1.65; margin-bottom: 24px;
+}
+.chat-window {
+  background: #F0F2F5; border-radius: 12px; padding: 16px 14px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.chat-msg {
+  display: flex; flex-direction: column; max-width: 85%;
+}
+.chat-msg.user { align-self: flex-end; align-items: flex-end; }
+.chat-msg.bot  { align-self: flex-start; align-items: flex-start; }
+.chat-bubble {
+  padding: 10px 14px; border-radius: 18px;
+  font-size: 13px; line-height: 1.5;
+}
+.chat-msg.user .chat-bubble {
+  background: #0084FF; color: white;
+  border-bottom-right-radius: 4px;
+}
+.chat-msg.bot .chat-bubble {
+  background: white; color: var(--black);
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+.chat-audio {
+  display: flex; align-items: center; gap: 10px;
+  background: white; border-radius: 18px; border-bottom-left-radius: 4px;
+  padding: 10px 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+.chat-audio-icon {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--saffron); display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.chat-audio-icon svg { display: block; }
+.chat-waveform {
+  display: flex; align-items: center; gap: 2px; height: 20px;
+}
+.chat-waveform span {
+  display: inline-block; width: 3px; border-radius: 2px;
+  background: var(--saffron); opacity: 0.6;
+}
+.chat-audio-dur { font-size: 11px; color: var(--gray-light); flex-shrink: 0; }
+.chat-sender { font-size: 11px; color: var(--gray-light); margin-top: 3px; padding: 0 4px; }
+
+@media (max-width: 900px) { .bot-ways { grid-template-columns: 1fr; } }
+
 /* ── LANGUAGES ── */
 .langs-section { background: var(--bg-tinted); }
 .langs-section .section-title { margin: 0 auto; }
@@ -631,6 +697,85 @@ footer {
         <p>The audio WAV arrives in your Telegram as a voice message. No app to open, no feed to scroll — tap play and start the day. The bot also listens 24/7: type a natural language request any time for an instant on-demand briefing.</p>
         <span class="step-pill" style="background:#F0FDF4; color:#15803D;">Audio Message · NLP Bot · On-demand</span>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- Two ways to use Vaani -->
+<section class="bot-section">
+  <div class="section-inner">
+    <div class="section-tag fade-up">Talk to Vaani</div>
+    <h2 class="section-title fade-up">Your briefing,<br>on your terms.</h2>
+    <p class="section-sub fade-up">Ask Vaani anytime — or let it find you every morning. Both ways, it speaks your language.</p>
+
+    <div class="bot-ways">
+
+      <!-- On-demand -->
+      <div class="bot-way fade-up">
+        <div class="bot-way-label">On demand · anytime</div>
+        <h3>Just ask the bot</h3>
+        <p>Message the Vaani Telegram bot in plain language. Ask for news, tasks, or a full briefing — in whichever language you want, right now.</p>
+        <div class="chat-window">
+          <div class="chat-msg user">
+            <div class="chat-bubble">Give me 10 minutes of tech news in Kannada</div>
+          </div>
+          <div class="chat-msg bot">
+            <div class="chat-audio">
+              <div class="chat-audio-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+              </div>
+              <div class="chat-waveform">
+                <span style="height:6px"></span><span style="height:14px"></span><span style="height:10px"></span><span style="height:18px"></span><span style="height:8px"></span><span style="height:16px"></span><span style="height:12px"></span><span style="height:20px"></span><span style="height:10px"></span><span style="height:14px"></span><span style="height:7px"></span><span style="height:16px"></span><span style="height:11px"></span><span style="height:18px"></span><span style="height:9px"></span>
+              </div>
+              <span class="chat-audio-dur">2:14</span>
+            </div>
+            <span class="chat-sender">Vaani Bot · Kannada</span>
+          </div>
+          <div class="chat-msg user">
+            <div class="chat-bubble">What are my tasks for today?</div>
+          </div>
+          <div class="chat-msg bot">
+            <div class="chat-audio">
+              <div class="chat-audio-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+              </div>
+              <div class="chat-waveform">
+                <span style="height:8px"></span><span style="height:12px"></span><span style="height:16px"></span><span style="height:9px"></span><span style="height:14px"></span><span style="height:18px"></span><span style="height:10px"></span><span style="height:13px"></span><span style="height:7px"></span><span style="height:15px"></span><span style="height:11px"></span><span style="height:17px"></span><span style="height:8px"></span><span style="height:14px"></span><span style="height:12px"></span>
+              </div>
+              <span class="chat-audio-dur">0:48</span>
+            </div>
+            <span class="chat-sender">Vaani Bot · English</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scheduled -->
+      <div class="bot-way fade-up">
+        <div class="bot-way-label">Scheduled · every morning</div>
+        <h3>Set it and forget it</h3>
+        <p>Tell the bot to schedule your briefing. At 7 AM IST, Vaani prepares, reviews, and delivers your personalised audio — no action needed from you.</p>
+        <div class="chat-window">
+          <div class="chat-msg user">
+            <div class="chat-bubble">Schedule my morning briefing in Hindi at 7 AM every day</div>
+          </div>
+          <div class="chat-msg bot">
+            <div class="chat-bubble">Done! You'll receive your Hindi briefing every morning at 7 AM IST — tasks, meetings, and top news. I'll check in before sending.</div>
+          </div>
+          <div class="chat-msg bot" style="margin-top:4px;">
+            <div class="chat-audio">
+              <div class="chat-audio-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+              </div>
+              <div class="chat-waveform">
+                <span style="height:9px"></span><span style="height:15px"></span><span style="height:11px"></span><span style="height:19px"></span><span style="height:7px"></span><span style="height:14px"></span><span style="height:17px"></span><span style="height:10px"></span><span style="height:13px"></span><span style="height:20px"></span><span style="height:8px"></span><span style="height:15px"></span><span style="height:12px"></span><span style="height:18px"></span><span style="height:9px"></span>
+              </div>
+              <span class="chat-audio-dur">4:32</span>
+            </div>
+            <span class="chat-sender">Vaani Bot · हिंदी · 7:00 AM</span>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
