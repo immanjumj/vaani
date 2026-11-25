@@ -2,6 +2,8 @@
 
 **[Live site](https://vaani.signalnook.in) · [Demo video](https://github.com/immanjumj/vaani/raw/main/vaani_demo.mp4)**
 
+![Vaani hero](screenshots/hero.png)
+
 ---
 
 ## What & Why
@@ -37,6 +39,18 @@ You don't read it. You listen to it. While making chai.
 | HTTP client | httpx | 0.27+ |
 
 **You need accounts at:** [Sarvam AI](https://dashboard.sarvam.ai) · [Flagsmith](https://app.flagsmith.com) · [NudgeBee](https://app.nudgebee.com) · Telegram (@BotFather)
+
+---
+
+## Screenshots
+
+| How it works | Tech stack |
+|---|---|
+| ![How it works](screenshots/how-it-works.png) | ![Tech stack](screenshots/tech-stack.png) |
+
+| Languages | Try it |
+|---|---|
+| ![Languages](screenshots/languages.png) | ![Demo CTA](screenshots/demo-cta.png) |
 
 ---
 
