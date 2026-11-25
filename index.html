@@ -351,23 +351,59 @@ section { padding: 96px 48px; }
 .cta-section .section-tag { color: #FF9B45; }
 .cta-section .section-tag::before { background: #FF9B45; }
 
-.terminal {
-  background: #0D1117; border: 1px solid #30363D;
-  border-radius: var(--radius-lg); padding: 24px;
-  max-width: 540px; margin: 48px auto 0; text-align: left;
-  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+.try-cards {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 20px; max-width: 780px; margin: 56px auto 0;
 }
-.terminal-bar {
-  display: flex; align-items: center; gap: 7px; margin-bottom: 20px;
+.try-card {
+  border-radius: var(--radius-lg); padding: 36px 32px;
+  text-align: left; display: flex; flex-direction: column; gap: 0;
 }
-.t-dot { width: 12px; height: 12px; border-radius: 50%; }
-.t-title { font-size: 12px; color: #6B7280; margin-left: auto; }
-.terminal-line { font-size: 13px; line-height: 1.8; }
-.t-prompt { color: var(--saffron); }
-.t-cmd { color: #E6EDF3; }
-.t-comment { color: #6B7280; }
-.t-output { color: #3FB950; }
-.t-sep { border: none; border-top: 1px solid #21262D; margin: 12px 0; }
+.try-card-primary {
+  background: var(--saffron);
+}
+.try-card-secondary {
+  background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(255,255,255,0.1);
+}
+.try-card-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; margin-bottom: 16px;
+}
+.try-card-primary .try-card-label { color: rgba(255,255,255,0.7); }
+.try-card-secondary .try-card-label { color: rgba(255,255,255,0.35); }
+.try-card h3 {
+  font-size: 22px; font-weight: 700; line-height: 1.2;
+  margin-bottom: 10px; letter-spacing: -0.5px;
+}
+.try-card-primary h3 { color: white; }
+.try-card-secondary h3 { color: white; }
+.try-card p {
+  font-size: 14px; line-height: 1.65; margin-bottom: 28px; flex: 1;
+}
+.try-card-primary p { color: rgba(255,255,255,0.75); }
+.try-card-secondary p { color: rgba(255,255,255,0.4); }
+.try-card-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 22px; border-radius: 9px;
+  font-size: 14px; font-weight: 600; text-decoration: none;
+  transition: all .2s; cursor: pointer; border: none;
+  font-family: inherit; align-self: flex-start;
+}
+.try-card-primary .try-card-btn {
+  background: white; color: var(--saffron);
+}
+.try-card-primary .try-card-btn:hover { background: #F3F4F6; transform: translateY(-1px); }
+.try-card-secondary .try-card-btn {
+  background: rgba(255,255,255,0.1); color: white;
+  border: 1.5px solid rgba(255,255,255,0.15);
+}
+.try-card-secondary .try-card-btn:hover { background: rgba(255,255,255,0.15); }
+.try-card-note {
+  font-size: 11px; margin-top: 12px; opacity: 0.5;
+}
+.try-card-primary .try-card-note { color: white; }
+.try-card-secondary .try-card-note { color: rgba(255,255,255,0.5); }
 
 .cta-actions { display: flex; gap: 14px; justify-content: center; margin-top: 40px; flex-wrap: wrap; }
 .btn-white {
@@ -446,6 +482,7 @@ footer {
   .arch-flow { flex-direction: column; align-items: center; }
   .arch-arrow { transform: rotate(90deg); padding: 6px 0; }
   .language-grid { grid-template-columns: repeat(2, 1fr); }
+  .try-cards { grid-template-columns: 1fr; }
   .footer-inner { flex-direction: column; gap: 32px; }
   .footer-bottom { flex-direction: column; gap: 8px; }
   .footer { padding: 40px 20px; }
@@ -765,57 +802,54 @@ footer {
 <!-- Demo / CTA -->
 <section class="cta-section" id="demo">
   <div class="section-inner">
-    <div class="section-tag fade-up" style="justify-content:center;">Get Started</div>
-    <h2 class="section-title fade-up">Start your morning<br>the right way.</h2>
-    <p class="section-sub fade-up">Message the Telegram bot in natural language, or trigger a briefing from the API — your personalised audio is ready in seconds.</p>
+    <div class="section-tag fade-up" style="justify-content:center;">Try It</div>
+    <h2 class="section-title fade-up">See it working.<br>Right now.</h2>
+    <p class="section-sub fade-up">Watch the full NudgeBee → Sarvam → Telegram pipeline run live, or clone and self-host with your own keys.</p>
 
-    <div class="terminal fade-up">
-      <div class="terminal-bar">
-        <div class="t-dot" style="background:#FF5F57"></div>
-        <div class="t-dot" style="background:#FEBC2E"></div>
-        <div class="t-dot" style="background:#28C840"></div>
-        <span class="t-title">vaani — API</span>
-      </div>
-      <div class="terminal-line">
-        <span class="t-comment"># Start NudgeBee simulation</span>
-      </div>
-      <div class="terminal-line">
-        <span class="t-prompt">$ </span>
-        <span class="t-cmd">curl -X POST localhost:8000/simulate/nudgebee/start</span>
-      </div>
-      <div class="terminal-line" style="padding-left:14px;">
-        <span class="t-output">→ {"sim_id": "sim_070000", "status": "awaiting_approval"}</span>
-      </div>
-      <hr class="t-sep">
-      <div class="terminal-line">
-        <span class="t-comment"># Trigger a manual briefing</span>
-      </div>
-      <div class="terminal-line">
-        <span class="t-prompt">$ </span>
-        <span class="t-cmd">curl -X POST localhost:8000/trigger</span>
-      </div>
-      <div class="terminal-line" style="padding-left:14px;">
-        <span class="t-output">→ {"status": "triggered", "user_id": "default_user"}</span>
-      </div>
-      <hr class="t-sep">
-      <div class="terminal-line">
-        <span class="t-comment"># Or just message the Telegram bot:</span>
-      </div>
-      <div class="terminal-line">
-        <span class="t-prompt">🤖 </span>
-        <span class="t-cmd">"give me 15 mins of news in Kannada"</span>
-      </div>
-      <div class="terminal-line" style="padding-left:14px;">
-        <span class="t-output">→ 🎧 Audio arriving in Telegram...</span>
-      </div>
-    </div>
+    <div class="try-cards fade-up">
 
-    <div class="cta-actions fade-up">
-      <a href="https://github.com/immanjumj/vaani" target="_blank" class="btn-white">View Source on GitHub ↗</a>
-      <a href="http://localhost:8000/docs" target="_blank" class="btn-outline-white">API Docs (FastAPI)</a>
+      <!-- Visitor path -->
+      <div class="try-card try-card-primary">
+        <div class="try-card-label">For visitors</div>
+        <h3>Live workflow demo</h3>
+        <p>See the real pipeline: NudgeBee fires the trigger, Vaani prepares the briefing, an approval gate holds it, then audio is delivered to Telegram.</p>
+        <button class="try-card-btn" id="demo-btn" onclick="startDemo()">
+          Launch live demo →
+        </button>
+        <div class="try-card-note">No login needed · takes ~30 seconds</div>
+      </div>
+
+      <!-- Developer path -->
+      <div class="try-card try-card-secondary">
+        <div class="try-card-label">For developers</div>
+        <h3>Self-host in 5 minutes</h3>
+        <p>Clone the repo, add your Sarvam, Flagsmith, and Telegram keys, and run it. The briefing bot becomes yours — your language, your schedule.</p>
+        <a href="https://github.com/immanjumj/vaani" target="_blank" class="try-card-btn">
+          View on GitHub ↗
+        </a>
+        <div class="try-card-note">Python · FastAPI · MIT licence</div>
+      </div>
+
     </div>
   </div>
 </section>
+
+<script>
+async function startDemo() {
+  const btn = document.getElementById('demo-btn');
+  btn.textContent = 'Starting…';
+  btn.disabled = true;
+  try {
+    const resp = await fetch('/simulate/nudgebee/start', { method: 'POST' });
+    if (!resp.ok) throw new Error('Server error');
+    const data = await resp.json();
+    window.location.href = data.dashboard_url;
+  } catch (e) {
+    btn.textContent = 'Could not connect — try the GitHub link';
+    btn.disabled = false;
+  }
+}
+</script>
 
 <!-- Footer -->
 <footer>

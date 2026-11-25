@@ -51,6 +51,16 @@ def health():
     return {"status": "ok", "service": "vaani"}
 
 
+# ── Demo audio retrieval (before session is sent) ─────────────────────────────
+
+@app.get("/demo/audio/{session_id}")
+async def demo_audio(session_id: str):
+    from fastapi.responses import Response
+    if session_id not in _sessions:
+        raise HTTPException(status_code=404, detail="Session not found or already sent")
+    return Response(content=_sessions[session_id]["audio"], media_type="audio/wav")
+
+
 # ── NudgeBee webhook ──────────────────────────────────────────────────────────
 
 class NudgeBeePayload(BaseModel):

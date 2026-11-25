@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """
-make_demo.py — Generate a Vaani demo video with Sarvam TTS voiceover.
+make_demo.py — Record a live working demo of Vaani with Sarvam TTS voiceover.
+
+Flow:
+  1. Start local FastAPI server
+  2. Fire simulation API (Sarvam TTS runs server-side while we record landing page)
+  3. Playwright records the browser live — landing tour → dashboard → approve → SENT
+  4. Generate Sarvam voiceover for the narration
+  5. Combine recorded video + voiceover with ffmpeg → vaani_demo.mp4
 
 Usage:
   source .venv/bin/activate
   python3 make_demo.py
-
-Output: vaani_demo.mp4
 """
 
 import asyncio
@@ -15,7 +20,9 @@ import io
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
+import time
 import wave
 from pathlib import Path
 
@@ -28,63 +35,27 @@ SARVAM_API_KEY = os.environ.get("SARVAM_API_KEY", "")
 if not SARVAM_API_KEY:
     raise SystemExit("SARVAM_API_KEY not set — check your .env file")
 
-SITE_URL = "https://vaani.signalnook.in"
+PORT = 8787
+BASE = f"http://localhost:{PORT}"
 OUTPUT = Path("vaani_demo.mp4")
-PAUSE_BETWEEN = 0.6   # seconds of silence between segments
-VIEWPORT = {"width": 1280, "height": 720}
 
-SEGMENTS = [
-    {
-        "id": "hero",
-        "selector": None,
-        "text": (
-            "Vaani is an AI morning briefing that speaks your language. "
-            "Every day at 7 AM, it gathers your tasks, meetings, and top news — "
-            "and delivers them as a personalised audio podcast directly to your Telegram."
-        ),
-    },
-    {
-        "id": "how-it-works",
-        "selector": "#how",
-        "text": (
-            "The workflow runs in three steps. "
-            "NudgeBee fires the morning trigger and waits for a human reviewer to approve the briefing. "
-            "Once approved, Sarvam AI translates the content and generates natural speech. "
-            "The audio is then delivered straight to Telegram."
-        ),
-    },
-    {
-        "id": "tech-stack",
-        "selector": "#tools",
-        "text": (
-            "Three tools make it all work together. "
-            "Flagsmith handles personalisation — managing language settings and running live A-B experiments on briefing formats. "
-            "Sarvam AI provides the language model, translation across Indian languages, and voice synthesis. "
-            "NudgeBee orchestrates the full pipeline with scheduling, an approval gate, and automatic retries."
-        ),
-    },
-    {
-        "id": "languages",
-        "selector": "#languages",
-        "text": (
-            "Vaani speaks eleven Indian languages — "
-            "Hindi, Kannada, Tamil, Telugu, Bengali, Marathi, Gujarati, Punjabi, and more — "
-            "each with a dedicated regional voice from Sarvam's Bulbul text-to-speech model."
-        ),
-    },
-    {
-        "id": "demo",
-        "selector": "#demo",
-        "text": (
-            "Vaani is open source. "
-            "You can trigger a briefing from the REST API or message the Telegram bot directly. "
-            "Try it now at vaani dot signalnook dot in."
-        ),
-    },
-]
+NARRATION = (
+    "Let me show you Vaani in action. "
+    "Vaani is an AI morning briefing that speaks your language — "
+    "tasks, meetings, and live news, delivered as audio to Telegram every morning at 7 AM. "
+    "It supports eleven Indian languages, powered by Sarvam's Bulbul text-to-speech. "
+    "Now let's trigger a live briefing. "
+    "We call the simulation API — Vaani starts fetching tasks, meetings, and news, "
+    "then generates a personalised audio script using Sarvam AI. "
+    "NudgeBee holds the briefing at a human approval gate before it goes out. "
+    "Here it is — ready and waiting for a reviewer to approve. "
+    "We click Approve, and Vaani sends the audio to Telegram. "
+    "Done. The morning briefing has been delivered. "
+    "Try it at vaani dot signalnook dot in."
+)
 
 
-# ── Audio helpers ──────────────────────────────────────────────────────────────
+# ── TTS helpers ────────────────────────────────────────────────────────────────
 
 def _chunk(text: str, max_chars: int = 490) -> list[str]:
     if len(text) <= max_chars:
@@ -102,11 +73,6 @@ def _chunk(text: str, max_chars: int = 490) -> list[str]:
     return chunks or [text[:max_chars]]
 
 
-def _wav_duration(wav_bytes: bytes) -> float:
-    with wave.open(io.BytesIO(wav_bytes), "rb") as wf:
-        return wf.getnframes() / wf.getframerate()
-
-
 def _concat_wavs(wavs: list[bytes]) -> bytes:
     if len(wavs) == 1:
         return wavs[0]
@@ -117,17 +83,6 @@ def _concat_wavs(wavs: list[bytes]) -> bytes:
                 if i == 0:
                     out.setparams(inp.getparams())
                 out.writeframes(inp.readframes(inp.getnframes()))
-    return buf.getvalue()
-
-
-def _make_silence(duration: float, sample_rate: int = 22050) -> bytes:
-    n_frames = int(sample_rate * duration)
-    buf = io.BytesIO()
-    with wave.open(buf, "wb") as wf:
-        wf.setnchannels(1)
-        wf.setsampwidth(2)
-        wf.setframerate(sample_rate)
-        wf.writeframes(b"\x00\x00" * n_frames)
     return buf.getvalue()
 
 
@@ -152,6 +107,34 @@ async def generate_tts(text: str) -> bytes:
     return _concat_wavs(all_audio)
 
 
+def wav_duration(wav_bytes: bytes) -> float:
+    with wave.open(io.BytesIO(wav_bytes), "rb") as wf:
+        return wf.getnframes() / wf.getframerate()
+
+
+# ── Server helpers ─────────────────────────────────────────────────────────────
+
+async def wait_for_server(timeout: int = 30) -> None:
+    deadline = time.time() + timeout
+    async with httpx.AsyncClient() as client:
+        while time.time() < deadline:
+            try:
+                resp = await client.get(f"{BASE}/health", timeout=2.0)
+                if resp.status_code == 200:
+                    return
+            except Exception:
+                pass
+            await asyncio.sleep(0.5)
+    raise TimeoutError("Server did not start in time")
+
+
+async def start_simulation() -> str:
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        resp = await client.post(f"{BASE}/simulate/nudgebee/start")
+        resp.raise_for_status()
+        return resp.json()["sim_id"]
+
+
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 async def main():
@@ -160,106 +143,152 @@ async def main():
     tmpdir = Path(tempfile.mkdtemp(prefix="vaani_demo_"))
     print(f"Working in {tmpdir}\n")
 
-    # 1. Generate TTS for all segments in parallel
-    print("Generating voiceover (Sarvam Bulbul TTS)...")
-    audio_wavs = await asyncio.gather(*[generate_tts(s["text"]) for s in SEGMENTS])
-    durations = [_wav_duration(w) for w in audio_wavs]
-
-    for seg, dur in zip(SEGMENTS, durations):
-        print(f"  [{seg['id']:16s}] {dur:.1f}s")
-
-    # 2. Build combined audio track (segments interleaved with silence)
-    silence = _make_silence(PAUSE_BETWEEN)
-    parts = []
-    for i, wav in enumerate(audio_wavs):
-        parts.append(wav)
-        if i < len(audio_wavs) - 1:
-            parts.append(silence)
-
-    combined_wav = tmpdir / "audio.wav"
-    combined_wav.write_bytes(_concat_wavs(parts))
-    total_audio = sum(durations) + PAUSE_BETWEEN * (len(SEGMENTS) - 1)
-    print(f"\n  Total audio: {total_audio:.1f}s\n")
-
-    # 3. Take screenshots via Playwright
-    print("Capturing screenshots of vaani.signalnook.in ...")
-    async with async_playwright() as pw:
-        browser = await pw.chromium.launch()
-        page = await browser.new_page(viewport=VIEWPORT)
-        await page.goto(SITE_URL, wait_until="networkidle")
-        await page.wait_for_timeout(2000)
-
-        frames = []
-        for i, seg in enumerate(SEGMENTS):
-            if seg["selector"]:
-                el = await page.query_selector(seg["selector"])
-                if el:
-                    await el.scroll_into_view_if_needed()
-                    await page.wait_for_timeout(700)
-                else:
-                    print(f"  Warning: selector '{seg['selector']}' not found, using current view")
-
-            img_path = tmpdir / f"frame_{i:02d}.png"
-            await page.screenshot(path=str(img_path), full_page=False)
-            frames.append(img_path)
-            print(f"  [{seg['id']:16s}] captured")
-
-        await browser.close()
-
-    # 4. Build ffmpeg concat list
-    # Each screenshot displays for its audio duration + silence gap
-    # (last segment gets no trailing silence)
-    display_times = [
-        dur + (PAUSE_BETWEEN if i < len(SEGMENTS) - 1 else 0)
-        for i, dur in enumerate(durations)
-    ]
-
-    concat_txt = tmpdir / "concat.txt"
-    with concat_txt.open("w") as f:
-        for img, t in zip(frames, display_times):
-            f.write(f"file '{img}'\n")
-            f.write(f"duration {t:.4f}\n")
-        f.write(f"file '{frames[-1]}'\n")  # ffmpeg quirk: repeat last without duration
-
-    # 5. Render silent video from screenshots
-    print("\nRendering video...")
-    video_silent = tmpdir / "video_silent.mp4"
-    subprocess.run(
-        [
-            "ffmpeg", "-y",
-            "-f", "concat", "-safe", "0", "-i", str(concat_txt),
-            "-vf", (
-                f"scale={VIEWPORT['width']}:{VIEWPORT['height']}:"
-                "force_original_aspect_ratio=decrease,"
-                f"pad={VIEWPORT['width']}:{VIEWPORT['height']}:"
-                "(ow-iw)/2:(oh-ih)/2:color=white,"
-                "format=yuv420p"
-            ),
-            "-c:v", "libx264", "-preset", "fast", "-crf", "18", "-r", "30",
-            str(video_silent),
-        ],
-        check=True,
+    # 1. Start local server
+    print("Starting Vaani server...")
+    server = subprocess.Popen(
+        [sys.executable, "-m", "uvicorn", "main:app", "--port", str(PORT), "--log-level", "error"],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
+    await wait_for_server()
+    print(f"  Server ready at {BASE}\n")
 
-    # 6. Mux video + audio → final MP4
-    subprocess.run(
-        [
-            "ffmpeg", "-y",
-            "-i", str(video_silent),
-            "-i", str(combined_wav),
-            "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", "-shortest",
-            str(OUTPUT),
-        ],
-        check=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    try:
+        # 2. Generate voiceover in background while we set up recording
+        print("Generating voiceover (Sarvam Bulbul TTS)...")
+        tts_task = asyncio.create_task(generate_tts(NARRATION))
 
-    shutil.rmtree(tmpdir)
+        # 3. Record browser session live
+        print("Recording live demo...\n")
+        async with async_playwright() as pw:
+            browser = await pw.chromium.launch(
+                slow_mo=120,
+                args=["--window-size=1280,720"],
+            )
+            context = await browser.new_context(
+                viewport={"width": 1280, "height": 720},
+                record_video_dir=str(tmpdir / "video"),
+                record_video_size={"width": 1280, "height": 720},
+            )
+            (tmpdir / "video").mkdir(exist_ok=True)
+            page = await context.new_page()
+
+            # ── Landing page tour ──────────────────────────────────────────
+            print("  Landing page...")
+            await page.goto(BASE, wait_until="networkidle")
+            await page.wait_for_timeout(2500)
+
+            # Kick off simulation while we scroll the landing page
+            print("  Triggering simulation (Sarvam preparing audio)...")
+            sim_task = asyncio.create_task(start_simulation())
+
+            # Scroll through sections slowly
+            for sel in ["#how", "#tools", "#languages"]:
+                await page.evaluate(
+                    f"document.querySelector('{sel}')?.scrollIntoView({{behavior:'smooth'}})"
+                )
+                await page.wait_for_timeout(2200)
+
+            # Wait for simulation to finish preparing
+            print("  Waiting for briefing to be prepared...", end="", flush=True)
+            sim_id = await sim_task
+            print(f" ready ({sim_id[:8]}...)")
+
+            # ── Simulation dashboard ───────────────────────────────────────
+            print("  Opening NudgeBee simulation dashboard...")
+            await page.goto(
+                f"{BASE}/simulate/nudgebee/dashboard/{sim_id}",
+                wait_until="networkidle",
+            )
+            await page.wait_for_timeout(2000)
+
+            # Wait for AWAITING APPROVAL state (dashboard auto-refreshes)
+            print("  Waiting for approval gate...", end="", flush=True)
+            for _ in range(30):
+                content = await page.content()
+                if "AWAITING APPROVAL" in content or "SENT" in content:
+                    break
+                await page.wait_for_timeout(2500)
+            print(" approval gate visible")
+
+            await page.wait_for_timeout(2500)
+
+            # ── Approve ────────────────────────────────────────────────────
+            print("  Clicking Approve...")
+            btn = await page.query_selector("button[type=submit]")
+            if btn:
+                await btn.click()
+            else:
+                # Already sent or no button — just wait
+                print("  (button not found, may already be processing)")
+
+            # Wait for SENT
+            print("  Waiting for SENT...", end="", flush=True)
+            for _ in range(20):
+                content = await page.content()
+                if "SENT" in content:
+                    break
+                await page.wait_for_timeout(2500)
+            print(" done")
+
+            await page.wait_for_timeout(4000)
+
+            # Finish recording
+            video_path_obj = await page.video.path()
+            await context.close()
+            await browser.close()
+
+        video_webm = Path(video_path_obj)
+        print(f"\n  Recorded: {video_webm.name}")
+
+        # 4. Wait for TTS
+        print("\nWaiting for voiceover...")
+        narration_wav = await tts_task
+        narration_duration = wav_duration(narration_wav)
+        print(f"  Voiceover: {narration_duration:.1f}s")
+
+        narration_path = tmpdir / "narration.wav"
+        narration_path.write_bytes(narration_wav)
+
+        # 5. Convert WebM → MP4 (silent)
+        print("\nRendering final video...")
+        video_mp4 = tmpdir / "video_silent.mp4"
+        subprocess.run(
+            [
+                "ffmpeg", "-y", "-i", str(video_webm),
+                "-vf", "scale=1280:720:force_original_aspect_ratio=decrease,"
+                       "pad=1280:720:(ow-iw)/2:(oh-ih)/2:color=white,"
+                       "format=yuv420p",
+                "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                str(video_mp4),
+            ],
+            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+
+        # 6. Mux video + narration
+        # Narration drives the length — if video is shorter, freeze last frame;
+        # if longer, narration is cut short. We pad video to match audio length.
+        subprocess.run(
+            [
+                "ffmpeg", "-y",
+                "-i", str(video_mp4),
+                "-i", str(narration_path),
+                "-filter_complex",
+                "[0:v]tpad=stop_mode=clone:stop_duration=10[v]",
+                "-map", "[v]", "-map", "1:a",
+                "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                "-c:a", "aac", "-b:a", "128k",
+                "-shortest",
+                str(OUTPUT),
+            ],
+            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+
+    finally:
+        server.terminate()
+        shutil.rmtree(tmpdir)
+
     print(f"\nDone!  →  {OUTPUT.resolve()}")
-    print(f"Duration: ~{total_audio:.0f}s")
 
 
 if __name__ == "__main__":
