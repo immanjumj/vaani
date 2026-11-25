@@ -254,7 +254,7 @@ section { padding: 96px 48px; }
   border-radius: 5px; text-transform: uppercase; letter-spacing: 0.8px;
 }
 
-/* ── SPONSOR TOOLS ── */
+/* ── TECH STACK ── */
 .tools { background: var(--bg); }
 
 .tools-grid {
@@ -263,8 +263,9 @@ section { padding: 96px 48px; }
 }
 .tool-card {
   border: 1.5px solid var(--border); border-radius: var(--radius-xl);
-  padding: 40px 36px; background: white;
+  padding: 36px 32px; background: white;
   transition: all .25s; position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
 }
 .tool-card::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
@@ -277,34 +278,27 @@ section { padding: 96px 48px; }
 
 .tool-card-top {
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 28px; min-height: 28px;
 }
-.tool-emoji { font-size: 36px; }
+.tool-card-logo { display: flex; align-items: center; }
 .tool-label {
   font-size: 11px; font-weight: 700; padding: 4px 10px;
   border-radius: 5px; text-transform: uppercase; letter-spacing: 0.8px;
+  white-space: nowrap;
 }
 .tool-card.flagsmith .tool-label { background: #FEF3C7; color: #D97706; }
 .tool-card.sarvam .tool-label    { background: var(--saffron-pale); color: var(--saffron); }
 .tool-card.nudgebee .tool-label  { background: #EDE9FE; color: #7C3AED; }
 
-.tool-card h3 { font-size: 21px; font-weight: 700; color: var(--black); letter-spacing: -0.5px; margin-bottom: 10px; }
-.tool-card p  { font-size: 14px; color: var(--gray); line-height: 1.7; margin-bottom: 24px; }
+.tool-card h3 { font-size: 20px; font-weight: 700; color: var(--black); letter-spacing: -0.5px; margin-bottom: 10px; }
+.tool-card p  { font-size: 14px; color: var(--gray); line-height: 1.7; margin-bottom: 24px; flex: 1; }
 
-.tool-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 24px; }
+.tool-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .tool-tag {
   font-size: 11px; font-weight: 600; padding: 3px 9px;
   border-radius: 5px; border: 1px solid var(--border);
   color: var(--gray-dark); background: var(--bg-warm);
 }
-
-.delete-test {
-  display: flex; align-items: flex-start; gap: 8px;
-  background: #FFF8F5; border: 1px solid #FFD6C2;
-  border-radius: 10px; padding: 12px 14px;
-  font-size: 12px; color: #9A3412; line-height: 1.5;
-}
-.delete-test-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
 
 /* ── LANGUAGES ── */
 .langs-section { background: var(--bg-tinted); }
@@ -584,65 +578,59 @@ footer {
 <!-- Built With -->
 <section class="tools" id="tools">
   <div class="section-inner">
-    <div class="section-tag fade-up">Built With</div>
+    <div class="section-tag fade-up">Tech Stack</div>
     <h2 class="section-title fade-up">Every integration is<br><em>load-bearing.</em></h2>
     <p class="section-sub fade-up">Remove any one of them and Vaani stops working. That's not integration theatre — that's architecture.</p>
 
     <div class="tools-grid">
       <div class="tool-card flagsmith fade-up">
         <div class="tool-card-top">
-          <div class="tool-emoji">🏴</div>
-          <span class="tool-label">Flagsmith</span>
+          <div class="tool-card-logo">
+            <img src="https://cdn.prod.website-files.com/64425c978745b453797839bb/64ccd966b5ca5d42866d4cd1_flagsmith-logo.svg" alt="Flagsmith" height="20" style="display:block; filter:brightness(0);">
+          </div>
+          <span class="tool-label">Personalisation</span>
         </div>
-        <h3>Personalisation Engine</h3>
-        <p>Language preference, content toggles (tasks / meetings / news), and briefing style are all remote config flags. The <code>briefing_format</code> flag runs a live A/B experiment — short vs. full — with real conversion tracking via <code>briefing_delivered</code> events.</p>
+        <h3>Feature Flags & A/B Testing</h3>
+        <p>Language preference, content toggles (tasks / meetings / news), and briefing style are remote config flags. The <code>briefing_format</code> flag runs a live A/B experiment with real conversion tracking via <code>briefing_delivered</code> events.</p>
         <div class="tool-tags">
           <span class="tool-tag">Remote Config</span>
-          <span class="tool-tag">A/B Experiment</span>
+          <span class="tool-tag">A/B Testing</span>
           <span class="tool-tag">Conversion Events</span>
           <span class="tool-tag">Multivariate</span>
-        </div>
-        <div class="delete-test">
-          <span class="delete-test-icon">🗑</span>
-          Delete Flagsmith → hardcoded English only, no personalisation, no A/B data.
         </div>
       </div>
 
       <div class="tool-card sarvam fade-up">
         <div class="tool-card-top">
-          <div class="tool-emoji">🇮🇳</div>
-          <span class="tool-label">Sarvam AI</span>
+          <div class="tool-card-logo">
+            <img src="https://assets.sarvam.ai/assets/brand/logos/sarvam-wordmark-black.svg" alt="Sarvam AI" height="17" style="display:block; filter:brightness(0);">
+          </div>
+          <span class="tool-label">Voice & LLM</span>
         </div>
-        <h3>Voice &amp; Intelligence</h3>
-        <p>Sarvam-105B parses natural language requests and expands news headlines into spoken commentary. Sarvam Translate (Mayura) converts the full script into 10 Indian languages. Bulbul v4-Flash generates natural audio across 200+ region-specific voices.</p>
+        <h3>Speech & Intelligence</h3>
+        <p>Sarvam-M parses natural language and expands news into spoken commentary. Mayura translates scripts across 10 Indian languages. Bulbul v4-Flash generates natural audio with 200+ region-specific voices.</p>
         <div class="tool-tags">
-          <span class="tool-tag">Sarvam-105B LLM</span>
+          <span class="tool-tag">Sarvam-M LLM</span>
           <span class="tool-tag">Mayura Translate</span>
-          <span class="tool-tag">Bulbul v4-Flash TTS</span>
+          <span class="tool-tag">Bulbul TTS</span>
           <span class="tool-tag">10 Languages</span>
-        </div>
-        <div class="delete-test">
-          <span class="delete-test-icon">🗑</span>
-          Delete Sarvam → no audio, no multilingual, no LLM. Just raw text in English.
         </div>
       </div>
 
       <div class="tool-card nudgebee fade-up">
         <div class="tool-card-top">
-          <div class="tool-emoji">🐝</div>
-          <span class="tool-label">NudgeBee</span>
+          <div class="tool-card-logo">
+            <img src="https://nudgebee.com/assets/images/logo-footer.svg" alt="NudgeBee" height="24" style="display:block; filter:brightness(0);">
+          </div>
+          <span class="tool-label">Orchestration</span>
         </div>
-        <h3>Ops &amp; Control Loop</h3>
-        <p>NudgeBee's workflow builder schedules the 7 AM trigger, orchestrates the prepare → approve → send pipeline, and provides the human-in-the-loop approval gate before delivery. If Vaani's health endpoint goes dark, NudgeBee retries and alerts on-call.</p>
+        <h3>Workflow & Control</h3>
+        <p>NudgeBee's workflow builder schedules the 7 AM trigger and orchestrates the prepare → approve → send pipeline. The human-in-the-loop approval gate ensures every briefing is reviewed before delivery.</p>
         <div class="tool-tags">
           <span class="tool-tag">Scheduled Workflow</span>
           <span class="tool-tag">Approval Gate</span>
           <span class="tool-tag">Health Monitor</span>
           <span class="tool-tag">Retry Logic</span>
-        </div>
-        <div class="delete-test">
-          <span class="delete-test-icon">🗑</span>
-          Delete NudgeBee → no scheduling, no approval gate, no reliability layer.
         </div>
       </div>
     </div>
