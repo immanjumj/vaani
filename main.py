@@ -51,7 +51,16 @@ def health():
     return {"status": "ok", "service": "vaani"}
 
 
-# ── Demo audio retrieval (before session is sent) ─────────────────────────────
+# ── Demo endpoints ─────────────────────────────────────────────────────────────
+
+@app.get("/demo/video")
+async def demo_video_file():
+    from fastapi.responses import FileResponse
+    video = Path(__file__).parent / "vaani_demo.mp4"
+    if not video.exists():
+        raise HTTPException(status_code=404, detail="Video not found")
+    return FileResponse(str(video), media_type="video/mp4")
+
 
 @app.get("/demo/audio/{session_id}")
 async def demo_audio(session_id: str):

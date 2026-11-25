@@ -457,6 +457,29 @@ footer {
 .footer-bottom a { color: rgba(255,255,255,0.3); text-decoration: none; }
 .footer-bottom a:hover { color: rgba(255,255,255,0.6); }
 
+/* ── VIDEO MODAL ── */
+.video-modal {
+  display: none; position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.88);
+  align-items: center; justify-content: center;
+  padding: 24px;
+}
+.video-modal.active { display: flex; }
+.video-modal-inner {
+  position: relative; width: 100%; max-width: 920px;
+}
+.video-modal-close {
+  position: absolute; top: -44px; right: 0;
+  background: none; border: none; color: rgba(255,255,255,0.7);
+  font-size: 36px; line-height: 1; cursor: pointer; padding: 4px 8px;
+  transition: color .15s;
+}
+.video-modal-close:hover { color: white; }
+.video-modal video {
+  width: 100%; border-radius: 12px;
+  display: block; box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+}
+
 /* ── ANIMATE ── */
 .fade-up {
   opacity: 0; transform: translateY(28px);
@@ -813,9 +836,9 @@ footer {
         <div class="try-card-label">For visitors</div>
         <h3>Watch it work</h3>
         <p>See the real pipeline: NudgeBee fires the trigger, Vaani prepares the briefing, an approval gate holds it, then audio is delivered to Telegram.</p>
-        <a href="https://github.com/immanjumj/vaani/raw/main/vaani_demo.mp4" target="_blank" class="try-card-btn">
+        <button class="try-card-btn" onclick="openVideoModal()">
           Watch demo video →
-        </a>
+        </button>
         <div class="try-card-note">70 seconds · Sarvam voiceover · real app</div>
       </div>
 
@@ -895,5 +918,31 @@ footer {
 
   document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
 </script>
+<!-- Video modal -->
+<div id="video-modal" class="video-modal" onclick="if(event.target===this)closeVideoModal()">
+  <div class="video-modal-inner">
+    <button class="video-modal-close" onclick="closeVideoModal()" aria-label="Close">&times;</button>
+    <video id="demo-video" controls preload="metadata">
+      <source src="/demo/video" type="video/mp4">
+    </video>
+  </div>
+</div>
+
+<script>
+function openVideoModal() {
+  document.getElementById('video-modal').classList.add('active');
+  document.getElementById('demo-video').play();
+  document.body.style.overflow = 'hidden';
+}
+function closeVideoModal() {
+  document.getElementById('video-modal').classList.remove('active');
+  const v = document.getElementById('demo-video');
+  v.pause();
+  v.currentTime = 0;
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVideoModal(); });
+</script>
+
 </body>
 </html>

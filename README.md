@@ -22,7 +22,7 @@ You don't read it. You listen to it. While making chai.
 
 ## Demo Video
 
-[Watch the demo (70s)](https://github.com/immanjumj/vaani/raw/main/vaani_demo.mp4) — shows the full NudgeBee → Sarvam → Telegram pipeline running live with Sarvam voiceover.
+[Watch the demo (70s)](https://vaani.signalnook.in/demo/video) — shows the full NudgeBee → Sarvam → Telegram pipeline running live with Sarvam voiceover. Also playable inline on the [live site](https://vaani.signalnook.in#demo).
 
 ---
 
