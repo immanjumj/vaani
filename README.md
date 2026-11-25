@@ -1,15 +1,42 @@
 # Vaani — AI Morning Briefing
 
-> Every morning at 7 AM, Vaani delivers a personalised audio briefing in your language — your tasks, today's meetings, and live news — straight to Telegram as a podcast.
+**[Live site](https://vaani.signalnook.in) · [Demo video](https://github.com/immanjumj/vaani/raw/main/vaani_demo.mp4)**
 
-**[Live site](https://vaani.signalnook.in) · [Demo video](#demo-video)**
+---
+
+## What & Why
+
+Most people in India start their morning scrolling through three different apps — a task manager, a calendar, and a news feed — across three different languages depending on who built the app. Vaani collapses that into a single two-minute audio podcast delivered to Telegram at 7 AM, in whichever Indian language you prefer.
+
+You don't read it. You listen to it. While making chai.
+
+**Vaani gives you:**
+- Your pending tasks, today's meetings, and live news headlines — compiled automatically
+- A natural-sounding voice in Hindi, Kannada, Tamil, Telugu, Bengali, Marathi, Gujarati, Punjabi, or English (India)
+- A human-in-the-loop approval gate so the briefing is reviewed before it reaches you
+- A/B experimentation on briefing length, tracked via real conversion events
 
 ---
 
 ## Demo Video
 
-<!-- Upload vaani_demo.mp4 to YouTube/Loom and paste the link below -->
-> _Demo video link coming soon_
+[Watch the demo (70s)](https://github.com/immanjumj/vaani/raw/main/vaani_demo.mp4) — shows the full NudgeBee → Sarvam → Telegram pipeline running live with Sarvam voiceover.
+
+---
+
+## Tech Stack & Prerequisites
+
+| Layer | Tool | Version |
+|---|---|---|
+| Runtime | Python | 3.11+ |
+| Web framework | FastAPI + Uvicorn | 0.111 / 0.29 |
+| Voice & LLM | Sarvam AI (Bulbul TTS, Mayura Translate, Sarvam-M) | API v1 |
+| Personalisation | Flagsmith | SDK 6.x |
+| Orchestration | NudgeBee | Workflow builder |
+| Delivery | Telegram Bot API | — |
+| HTTP client | httpx | 0.27+ |
+
+**You need accounts at:** [Sarvam AI](https://dashboard.sarvam.ai) · [Flagsmith](https://app.flagsmith.com) · [NudgeBee](https://app.nudgebee.com) · Telegram (@BotFather)
 
 ---
 
@@ -31,101 +58,113 @@ NudgeBee (7 AM schedule)
             └─ Telegram Bot  →  sends WAV audio message to user
 ```
 
-**Sponsor tool roles (all load-bearing):**
-- **Sarvam AI** — Bulbul v4 TTS in 10 Indian languages + Translate API for regional languages. Remove it → no audio, no product.
+**Every integration is load-bearing:**
+- **Sarvam AI** — Bulbul v4 TTS in 11 Indian languages + Mayura Translate + Sarvam-M LLM. Remove it → no audio, no product.
 - **Flagsmith** — remote config (language, content blocks) + multivariate A/B experiment (`briefing_format`: short vs full). Conversion metric: `briefing_delivered`. Remove it → hardcoded behaviour, no experimentation.
-- **NudgeBee** — scheduled workflow, human approval gate before sending, automatic retry + alert if Vaani's `/health` goes down. Remove it → no orchestration, no reliability loop.
+- **NudgeBee** — scheduled workflow, human approval gate, automatic retry + alert if `/health` goes dark. Remove it → no orchestration, no reliability loop.
 
 ---
 
-## Flagsmith Setup
+## Quickstart
 
-Create the following flags in your Flagsmith project:
+```bash
+git clone https://github.com/immanjumj/vaani.git
+cd vaani
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env        # fill in your keys (see below)
+uvicorn main:app --reload
+```
 
-| Flag name | Type | Default value | Purpose |
-|---|---|---|---|
-| `user_language` | Remote Config (String) | `en-IN` | Language for TTS. Options: `hi-IN`, `kn-IN`, `ta-IN`, `bn-IN`, etc. |
-| `show_tasks` | Feature Flag (Boolean) | `true` | Include tasks section |
-| `show_meetings` | Feature Flag (Boolean) | `true` | Include meetings section |
-| `show_news` | Feature Flag (Boolean) | `true` | Include news section |
-| `briefing_format` | **Multivariate (String)** | `full` (50%) + `short` (50%) | A/B experiment — conversion: `briefing_delivered` |
-
-For the `briefing_format` experiment:
-1. Create as a **Multivariate** flag
-2. Control value: `full`, Weight: 50%
-3. Variant 1 value: `short`, Weight: 50%
-4. Enable **Experimentation** and set conversion event to `briefing_delivered`
+Open http://localhost:8000 to see the landing page.
 
 ---
 
-## NudgeBee Workflow Setup
+## Usage Examples
 
-1. Sign up at [app.nudgebee.com](https://app.nudgebee.com)
-2. Create a new **Workflow** → name it `Vaani Morning Briefing`
-3. Add steps:
+**Trigger a one-shot briefing:**
+```bash
+curl -X POST "http://localhost:8000/trigger?user_id=default_user"
+# → {"status": "triggered", "user_id": "default_user"}
+```
 
-   | Step | Type | Config |
-   |---|---|---|
-   | 1 | **Schedule** | Daily at 07:00 AM IST |
-   | 2 | **HTTP Task** | POST `https://<your-ngrok-or-domain>/webhook/nudgebee` · Body: `{"action":"prepare","user_id":"default_user"}` |
-   | 3 | **Human Approval Gate** | Prompt: "Vaani briefing is ready. Send to Telegram?" |
-   | 4 | **HTTP Task** | POST `.../webhook/nudgebee` · Body: `{"action":"send","session_id":"{{step2.session_id}}"}` |
+**Run the full NudgeBee simulation (prepare → approve → send):**
+```bash
+# Step 1 — prepare briefing, get sim_id
+curl -X POST http://localhost:8000/simulate/nudgebee/start
+# → {"sim_id": "sim_070000", "status": "awaiting_approval", "dashboard_url": "..."}
 
-4. Enable the workflow. If step 2 fails, NudgeBee retries and pages you.
+# Step 2 — open the dashboard URL in a browser, then approve:
+curl -X POST http://localhost:8000/simulate/nudgebee/approve/sim_070000
+# → {"status": "sent", "message": "Morning briefing delivered to Telegram!"}
+```
 
-> For the demo, use `{"action":"trigger"}` in step 2 to skip the approval gate and send in one shot.
+**Change language via Flagsmith:**  
+Set the `user_language` flag to `kn-IN` in your Flagsmith dashboard and trigger again — the next briefing arrives in Kannada.
+
+**Expose to NudgeBee via ngrok:**
+```bash
+ngrok http 8000
+# Use the https://xxxx.ngrok.io URL in your NudgeBee workflow steps
+```
 
 ---
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` and fill in:
+Copy `.env.example` to `.env`:
 
 ```env
 SARVAM_API_KEY=          # From https://dashboard.sarvam.ai
 FLAGSMITH_ENVIRONMENT_KEY=  # From your Flagsmith project settings
 TELEGRAM_BOT_TOKEN=      # From @BotFather on Telegram
-TELEGRAM_CHAT_ID=        # Your personal chat ID (send /start to your bot, then check https://api.telegram.org/bot<TOKEN>/getUpdates)
-SCOUT_API_URL=           # Optional: your Scout news API endpoint
+TELEGRAM_CHAT_ID=        # Send /start to your bot, then GET https://api.telegram.org/bot<TOKEN>/getUpdates
+SCOUT_API_URL=           # Optional: news API endpoint (falls back to mock data)
 VAANI_USER_ID=default_user
 ```
 
 ---
 
-## Run Locally
+## Flagsmith Setup
 
-```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env   # fill in your keys
-uvicorn main:app --reload
-```
-
-Trigger a briefing manually:
-```bash
-curl -X POST "http://localhost:8000/trigger?user_id=default_user"
-```
-
-Expose to NudgeBee (use ngrok or similar):
-```bash
-ngrok http 8000
-```
+| Flag | Type | Default | Purpose |
+|---|---|---|---|
+| `user_language` | String | `en-IN` | TTS language (`hi-IN`, `kn-IN`, `ta-IN`, …) |
+| `show_tasks` | Boolean | `true` | Include tasks in briefing |
+| `show_meetings` | Boolean | `true` | Include meetings |
+| `show_news` | Boolean | `true` | Include news |
+| `briefing_format` | **Multivariate** | `full` 50% / `short` 50% | A/B experiment — conversion: `briefing_delivered` |
 
 ---
 
-## API Endpoints
+## NudgeBee Workflow
 
-| Method | Path | Purpose |
+| Step | Type | Config |
 |---|---|---|
-| `GET` | `/health` | NudgeBee health monitor target |
-| `POST` | `/webhook/nudgebee` | NudgeBee workflow webhook (`prepare` / `send` / `trigger`) |
-| `POST` | `/trigger?user_id=` | Manual one-shot trigger (dev/demo) |
+| 1 | Schedule | Daily 07:00 AM IST |
+| 2 | HTTP Task | `POST /webhook/nudgebee` `{"action":"prepare","user_id":"default_user"}` |
+| 3 | Human Approval Gate | "Vaani briefing ready — send to Telegram?" |
+| 4 | HTTP Task | `POST /webhook/nudgebee` `{"action":"send","session_id":"{{step2.session_id}}"}` |
+
+---
+
+## API Reference
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/` | Landing page |
+| `GET` | `/health` | Health check (NudgeBee monitor target) |
+| `POST` | `/webhook/nudgebee` | NudgeBee webhook (`prepare` / `send` / `trigger`) |
+| `POST` | `/trigger` | Manual one-shot briefing trigger |
+| `POST` | `/simulate/nudgebee/start` | Start a demo simulation |
+| `GET` | `/simulate/nudgebee/dashboard/{id}` | Live workflow dashboard |
+| `POST` | `/simulate/nudgebee/approve/{id}` | Approve and send |
 
 ---
 
 ## AI Disclosure
 
-This project was built with the assistance of Claude Code (Anthropic). All code has been reviewed and understood by the team. Architecture, data flow, and integration decisions are the team's own.
+Built with Claude Code (Anthropic). Architecture, integration decisions, and all code have been reviewed and are understood by the author.
 
 ---
 
