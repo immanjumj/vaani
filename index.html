@@ -811,12 +811,12 @@ footer {
       <!-- Visitor path -->
       <div class="try-card try-card-primary">
         <div class="try-card-label">For visitors</div>
-        <h3>Live workflow demo</h3>
+        <h3>Watch it work</h3>
         <p>See the real pipeline: NudgeBee fires the trigger, Vaani prepares the briefing, an approval gate holds it, then audio is delivered to Telegram.</p>
-        <button class="try-card-btn" id="demo-btn" onclick="startDemo()">
-          Launch live demo →
-        </button>
-        <div class="try-card-note">No login needed · takes ~30 seconds</div>
+        <a href="https://github.com/immanjumj/vaani/raw/main/vaani_demo.mp4" target="_blank" class="try-card-btn">
+          Watch demo video →
+        </a>
+        <div class="try-card-note">70 seconds · Sarvam voiceover · real app</div>
       </div>
 
       <!-- Developer path -->
@@ -834,22 +834,6 @@ footer {
   </div>
 </section>
 
-<script>
-async function startDemo() {
-  const btn = document.getElementById('demo-btn');
-  btn.textContent = 'Starting…';
-  btn.disabled = true;
-  try {
-    const resp = await fetch('/simulate/nudgebee/start', { method: 'POST' });
-    if (!resp.ok) throw new Error('Server error');
-    const data = await resp.json();
-    window.location.href = data.dashboard_url;
-  } catch (e) {
-    btn.textContent = 'Could not connect — try the GitHub link';
-    btn.disabled = false;
-  }
-}
-</script>
 
 <!-- Footer -->
 <footer>
