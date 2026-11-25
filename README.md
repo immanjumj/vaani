@@ -1,9 +1,15 @@
 # Vaani — AI Morning Briefing
 
-> Your intelligent festive-season morning companion.  
-> Every morning, Vaani calls your Telegram with a personalised audio briefing in your language — pending tasks, today's meetings, and real estate & market news — delivered as a podcast.
+> Every morning at 7 AM, Vaani delivers a personalised audio briefing in your language — your tasks, today's meetings, and live news — straight to Telegram as a podcast.
 
-Built at **Festive Hacks × WeAreDevelopers Conference India 2026**.
+**[Live site](https://vaani.signalnook.in) · [Demo video](#demo-video)**
+
+---
+
+## Demo Video
+
+<!-- Upload vaani_demo.mp4 to YouTube/Loom and paste the link below -->
+> _Demo video link coming soon_
 
 ---
 
@@ -123,4 +129,4 @@ This project was built with the assistance of Claude Code (Anthropic). All code 
 
 ---
 
-*Festive Hacks × WeAreDevelopers Conference India — November 25, 2026*
+*Submitted to Festive Hacks × WeAreDevelopers Conference India — November 25, 2026*
