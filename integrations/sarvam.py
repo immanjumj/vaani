@@ -31,16 +31,17 @@ def _auth_headers() -> dict:
 def _chunk_text(text: str, max_chars: int = _MAX_CHARS) -> list[str]:
     if len(text) <= max_chars:
         return [text]
-    chunks, current = [], ""
-    for sentence in text.replace(". ", ".|").split("|"):
-        if len(current) + len(sentence) > max_chars:
-            if current:
-                chunks.append(current.strip())
-            current = sentence
-        else:
-            current += sentence
-    if current.strip():
-        chunks.append(current.strip())
+    chunks = []
+    while text:
+        if len(text) <= max_chars:
+            chunks.append(text.strip())
+            break
+        # Find last space within limit to avoid splitting mid-word
+        split_at = text.rfind(" ", 0, max_chars)
+        if split_at < max_chars // 2:
+            split_at = max_chars  # hard cut if no good space found
+        chunks.append(text[:split_at].strip())
+        text = text[split_at:].strip()
     return chunks or [text[:max_chars]]
 
 
@@ -75,20 +76,28 @@ async def chat_complete(prompt: str, max_tokens: int = 500) -> str:
 async def translate_text(text: str, target_language: str) -> str:
     if target_language == "en-IN":
         return text
+
+    # Sarvam translate limit: 1000 chars per request
+    chunks = _chunk_text(text, max_chars=900)
+    translated_chunks: list[str] = []
+
     async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.post(
-            f"{_SARVAM_BASE}/translate",
-            headers=_auth_headers(),
-            json={
-                "input": text,
-                "source_language_code": "en-IN",
-                "target_language_code": target_language,
-                "speaker_gender": "Female",
-                "mode": "formal",
-            },
-        )
-        resp.raise_for_status()
-        return resp.json()["translated_text"]
+        for chunk in chunks:
+            resp = await client.post(
+                f"{_SARVAM_BASE}/translate",
+                headers=_auth_headers(),
+                json={
+                    "input": chunk,
+                    "source_language_code": "en-IN",
+                    "target_language_code": target_language,
+                    "speaker_gender": "Female",
+                    "mode": "formal",
+                },
+            )
+            resp.raise_for_status()
+            translated_chunks.append(resp.json()["translated_text"])
+
+    return " ".join(translated_chunks)
 
 
 async def text_to_speech(text: str, language_code: str = "en-IN") -> bytes:
