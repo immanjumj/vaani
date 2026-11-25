@@ -8,12 +8,15 @@ from flagsmith.models import DefaultFlag
 #   Variant:  "short" (50%)
 # Conversion event: "briefing_delivered"
 
+_DEFAULT_TOPICS = "AI,Apple HomeKit,Apple,Matter home automation,India real estate"
+
 _DEFAULTS: dict[str, DefaultFlag] = {
     "user_language":    DefaultFlag(True, "en-IN"),
     "show_tasks":       DefaultFlag(True, None),
     "show_meetings":    DefaultFlag(True, None),
     "show_news":        DefaultFlag(True, None),
     "briefing_format":  DefaultFlag(True, "full"),
+    "news_topics":      DefaultFlag(True, _DEFAULT_TOPICS),
 }
 
 _client: Flagsmith | None = None
@@ -48,6 +51,13 @@ def get_user_flags(user_id: str) -> dict:
         "show_meetings": bool(identity_flags.get_flag("show_meetings").enabled),
         "show_news": bool(identity_flags.get_flag("show_news").enabled),
         "briefing_format": str(fmt_flag.value or "full"),
+        "news_topics": [
+            t.strip()
+            for t in str(
+                identity_flags.get_flag("news_topics").value or _DEFAULT_TOPICS
+            ).split(",")
+            if t.strip()
+        ],
     }
 
 

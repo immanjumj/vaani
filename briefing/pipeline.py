@@ -21,7 +21,7 @@ async def prepare_briefing(user_id: str) -> str:
 
     tasks = get_mock_tasks(fmt) if flags["show_tasks"] else []
     meetings = get_mock_meetings(fmt) if flags["show_meetings"] else []
-    news = await get_news(fmt) if flags["show_news"] else []
+    news = await get_news(flags["news_topics"], fmt) if flags["show_news"] else []
 
     script = build_script(tasks, meetings, news, language, fmt)
 
