@@ -2,6 +2,7 @@ import asyncio
 import os
 from contextlib import asynccontextmanager
 from datetime import datetime
+from pathlib import Path
 
 import uvicorn
 from dotenv import load_dotenv
@@ -14,18 +15,33 @@ load_dotenv()
 from briefing.pipeline import prepare_briefing, run_briefing, send_briefing
 from bot.telegram_handler import start_polling
 
+_INDEX_HTML = Path(__file__).parent / "index.html"
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    poll_task = asyncio.create_task(start_polling())
+    poll_task = None
+    try:
+        if os.getenv("TELEGRAM_BOT_TOKEN"):
+            poll_task = asyncio.create_task(start_polling())
+    except Exception:
+        pass
     yield
-    poll_task.cancel()
+    if poll_task:
+        poll_task.cancel()
 
 
 app = FastAPI(title="Vaani — AI Morning Briefing", version="1.0.0", lifespan=lifespan)
 
 # In-memory simulation state for NudgeBee demo
 _sim_sessions: dict[str, dict] = {}
+
+
+# ── Landing page ──────────────────────────────────────────────────────────────
+
+@app.get("/", response_class=HTMLResponse)
+async def landing():
+    return _INDEX_HTML.read_text()
 
 
 # ── Health ────────────────────────────────────────────────────────────────────
