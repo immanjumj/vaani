@@ -44,13 +44,17 @@ You don't read it. You listen to it. While making chai.
 
 ## Screenshots
 
-| How it works | Tech stack |
-|---|---|
-| ![How it works](screenshots/how-it-works.png) | ![Tech stack](screenshots/tech-stack.png) |
+![Hero](screenshots/hero.png)
 
-| Languages | Try it |
+![How it works](screenshots/how-it-works.png)
+
+![Talk to Vaani — on demand and scheduled](screenshots/bot-section.png)
+
+| Tech stack | Languages |
 |---|---|
-| ![Languages](screenshots/languages.png) | ![Demo CTA](screenshots/demo-cta.png) |
+| ![Tech stack](screenshots/tech-stack.png) | ![Languages](screenshots/languages.png) |
+
+![Try it](screenshots/demo-cta.png)
 
 ---
 
