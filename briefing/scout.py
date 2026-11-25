@@ -27,8 +27,12 @@ async def _fetch_topic(topic: str, limit: int) -> list[dict]:
     return articles
 
 
-async def get_news(topics: list[str], fmt: str = "full") -> list[dict]:
-    per_topic = 1 if fmt == "short" else 2
+async def get_news(topics: list[str], fmt: str = "full", total_limit: int | None = None) -> list[dict]:
+    if total_limit and topics:
+        per_topic = max(1, total_limit // len(topics))
+    else:
+        per_topic = 1 if fmt == "short" else 2
+
     results = []
     for topic in topics:
         try:
@@ -36,4 +40,4 @@ async def get_news(topics: list[str], fmt: str = "full") -> list[dict]:
             results.extend(articles)
         except Exception:
             pass
-    return results
+    return results[:total_limit] if total_limit else results

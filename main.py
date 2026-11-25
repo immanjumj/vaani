@@ -1,3 +1,4 @@
+import asyncio
 import os
 from contextlib import asynccontextmanager
 
@@ -9,11 +10,14 @@ from pydantic import BaseModel
 load_dotenv()
 
 from briefing.pipeline import prepare_briefing, run_briefing, send_briefing
+from bot.telegram_handler import start_polling
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    poll_task = asyncio.create_task(start_polling())
     yield
+    poll_task.cancel()
 
 
 app = FastAPI(title="Vaani — AI Morning Briefing", version="1.0.0", lifespan=lifespan)

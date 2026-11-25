@@ -57,6 +57,21 @@ def _concat_wavs(wav_list: list[bytes]) -> bytes:
     return buf.getvalue()
 
 
+async def chat_complete(prompt: str, max_tokens: int = 500) -> str:
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.post(
+            f"{_SARVAM_BASE}/v2/chat/completions",
+            headers=_auth_headers(),
+            json={
+                "model": "sarvam-m",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": max_tokens,
+            },
+        )
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"]
+
+
 async def translate_text(text: str, target_language: str) -> str:
     if target_language == "en-IN":
         return text
@@ -78,17 +93,24 @@ async def translate_text(text: str, target_language: str) -> str:
 
 async def text_to_speech(text: str, language_code: str = "en-IN") -> bytes:
     chunks = _chunk_text(text)
+    # Sarvam allows max 3 inputs per request — batch accordingly
+    batch_size = 3
+    all_audio: list[bytes] = []
+
     async with httpx.AsyncClient(timeout=60.0) as client:
-        resp = await client.post(
-            f"{_SARVAM_BASE}/text-to-speech",
-            headers=_auth_headers(),
-            json={
-                "inputs": chunks,
-                "target_language_code": language_code,
-                "speaker": _speaker_for(language_code),
-                "model": "bulbul:v4-flash",
-            },
-        )
-        resp.raise_for_status()
-        audio_list = [base64.b64decode(a) for a in resp.json()["audios"]]
-    return _concat_wavs(audio_list)
+        for i in range(0, len(chunks), batch_size):
+            batch = chunks[i : i + batch_size]
+            resp = await client.post(
+                f"{_SARVAM_BASE}/text-to-speech",
+                headers=_auth_headers(),
+                json={
+                    "inputs": batch,
+                    "target_language_code": language_code,
+                    "speaker": _speaker_for(language_code),
+                    "model": "bulbul:v4-flash",
+                },
+            )
+            resp.raise_for_status()
+            all_audio.extend(base64.b64decode(a) for a in resp.json()["audios"])
+
+    return _concat_wavs(all_audio)

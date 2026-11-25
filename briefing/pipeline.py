@@ -9,9 +9,40 @@ from integrations.flagsmith_client import get_user_flags, track_delivered
 from integrations.sarvam import text_to_speech, translate_text
 from integrations.telegram_bot import send_audio_message
 
-# In-memory session store: session_id -> briefing payload
-# NudgeBee's prepare → approve → send flow uses this
 _sessions: dict[str, dict] = {}
+
+
+async def run_briefing_request(
+    user_id: str,
+    language: str | None = None,
+    duration_mins: int = 5,
+    content_type: str = "all",
+    topics: list[str] | None = None,
+    chat_id: str | None = None,
+) -> None:
+    flags = get_user_flags(user_id)
+    lang = language or flags["language"]
+    fmt = flags["briefing_format"]
+    news_topics = topics or flags["news_topics"]
+
+    # 2 news items per minute of podcast
+    news_count = max(2, duration_mins * 2)
+
+    tasks = get_mock_tasks(fmt) if content_type in ("all", "personal") else []
+    meetings = get_mock_meetings(fmt) if content_type in ("all", "personal") else []
+    news = await get_news(news_topics, fmt, news_count) if content_type in ("all", "news") else []
+
+    script = await build_script(tasks, meetings, news, lang, fmt, duration_mins)
+
+    if lang != "en-IN":
+        script = await translate_text(script, lang)
+
+    audio = await text_to_speech(script, lang)
+
+    target_chat_id = chat_id or os.getenv("TELEGRAM_CHAT_ID")
+    caption = f"Vaani — {duration_mins} min {content_type} briefing · {lang}"
+    await send_audio_message(audio, caption, chat_id=target_chat_id)
+    track_delivered(user_id)
 
 
 async def prepare_briefing(user_id: str) -> str:
@@ -21,9 +52,9 @@ async def prepare_briefing(user_id: str) -> str:
 
     tasks = get_mock_tasks(fmt) if flags["show_tasks"] else []
     meetings = get_mock_meetings(fmt) if flags["show_meetings"] else []
-    news = await get_news(flags["news_topics"], fmt) if flags["show_news"] else []
+    news = await get_news(flags["news_topics"], fmt, 10) if flags["show_news"] else []
 
-    script = build_script(tasks, meetings, news, language, fmt)
+    script = await build_script(tasks, meetings, news, language, fmt, duration_mins=5)
 
     if language != "en-IN":
         script = await translate_text(script, language)
@@ -58,5 +89,4 @@ async def send_briefing(session_id: str) -> None:
 
 async def run_briefing(user_id: str | None = None) -> None:
     uid = user_id or os.getenv("VAANI_USER_ID", "default_user")
-    session_id = await prepare_briefing(uid)
-    await send_briefing(session_id)
+    await run_briefing_request(uid, duration_mins=5)
